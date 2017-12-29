@@ -24,14 +24,16 @@ SOURCES += main.cpp\
     qextserialbase.cpp \
     crc16.cpp \
     inputnum_widget.cpp \
-    mylineedit.cpp
+    mylineedit.cpp \
+    hardware.cpp
 
 HEADERS  += mainwindow.h \
     posix_qextserialport.h \
     qextserialbase.h \
     crc16.h \
     inputnum_widget.h \
-    mylineedit.h
+    mylineedit.h \
+    hardware.h
 
 FORMS    += mainwindow.ui \
     inputnum_widget.ui

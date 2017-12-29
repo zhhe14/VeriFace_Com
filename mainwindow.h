@@ -1,8 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+// 0064248055000000008b00a80b0a3302013005204051602fc1bad5f1cee40000000000000000000000000000000000000000000000000000206404113435303832313139393230383238333431380000000000000000000000000000000400289000ca26
+// 051425aaaaaa9669050800009001000400554f2f634e53200020002000200020002000200020002000200020002000310030003100310039003900310030003700310034007f5e7f89cd82a768bf53b06530574795b0652b7551679765b251094ec47e320031003300f7532000200020002000200020002000200020002000200020002000200020002000340035003000340032003100310039003900310030003700310034003100350033003100cd82a768bf536c51895b405c2000200020002000200020002000200020003200300030003700300038003000360032003000310037003000380030003600200020002000200020002000200020002000200020002000200020002000200020002000574c66007e00320000ff851e5151513e710dd564f365d06fcccdbd484337317148f58d84719681b7a4d73ef829bfcbb35fc3cf568198a187007d4f3ff91f3027a6c0e9fb31d59c5bd515fc8c3588cc8bcca9e22d8426a454c455598551aed55251515a3e9c15304da62be9b20d010dbefd000c2878199aa198ba3867144fa75f9e43524099cf63f519307819d9b1a4752d7c532c7275992849a70a309c603274039eae510e74fb11989fd9fee1ce4ff7139f4b1007aba58fee5142191eab79d3971ed3eb4c4c4d9e64489fa5cba8329c6eba1e337bd54dbd162eef43ceb9654a3d4d74e2d86b76f089fcbda0476f5929353410c763f9a0df4021434bc0e1e49320826180c2743ada9bbe1df8699b049e749c77a7299f670ca4f2053245398933083cd5473bb9bcf562aa57670ff24bf45c8f991f068905ab2a75ffa40f4189c24ed6fc373ec3c241eab3a1eceed9ccc0bd4bc829916fbf5468832d092903262ca5b82224f2081564b859ee49a4df177ac836ba8537edd25a27dcfe589bfd5bf62ef2a47239abc139f14199b00b3969ad7ec0e20d97202ff68c76058ac026938e2f0a279e677b334c0cce78bd344f6ce70fef010cad686497820b82c14ae57cf9e33ea376a9a22a11b82a5610ff993d743b39e24fd1a96375a5b3124040fc5fc7025b90f6543943f90a91d729a42e17a286ae5117d13a7909b1ac4797854f9453d22071337059d5524bed14dd8127aafc30ef500987b7fc48012ebbff70be75d6527ea68a5ff89d741a06de99f78e13cf755f0f3973b9d0f01993f47915f8a35a9c88bba31a3afc80d3d34fa077a485ffde775d5730332ab19472e10abd1f858f9162c5d30cd2e605a81a77f6e3974847beac7a41b55dcbb795988a17011d53dd021aa292b46fe95c0d3f243cbe9da95f657c145635a082f39b1e8ad89d31fdf94804710d25937262f65e7f36d3f90378b263c909ad13652e66053f7c59223f81fbcb5d2a3ab10bd0aa615006550ba6bc834009cde36d88f627eee54dc6dbf77b2db7d1c504ca16f59868467931d2fe0f1c1de91980d7d9e8fdb4391650417c07eeee9ef1c084e8d1fa2ee2311cb1ee9477b810472c5eceb952e8d9c1120cd987d061e55077c248de264bdda6864e88f2477a1b267bd7cbce6b88a7d18e1760637365f7ba2ccc88b3f88d13a3a225ebf545045cfebf3851eab43c0ecdedb21f95bbdb46c8fc5a3e0b4cc65789a05c86a9eee7b1c41988acb1ad72007db2f5bc59daf198479b19293a643fcc1b761c9cf74067d63bdf92dc576b47705629e80954797a74074e67ae518512331c17833d93ba9706e44fed5a3e80f84671ff9b813f5b260d7226d0881b09bb60bfa73582214f7e5e6f71ea63ab98d2c81867f4a3410e511526c2b0f4413897fec1f76d198a46f676ed1a2f93fb5931a448f91205572eda60
 #include <QMainWindow>
 #include "posix_qextserialport.h"
+#include "hardware.h"
 
 namespace Ui {
 class MainWindow;
@@ -16,10 +19,15 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+signals:
+    void sendHardwareData(u_int8_t *data, u_int32_t len);
+
 private slots:
-    void readMyCom();
     void HandleLineEditclicked();
     void receiveData(QString data);
+    //void recvHardwareData(u_int8_t *recv_data, u_int32_t recv_len);
+    void recvHardwareData(QString str);
+
     void on_SendPWM_Button_clicked();
     void on_OpenDoor_Button_clicked();
     void on_CloseDoor_Button_clicked();
@@ -28,81 +36,9 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    Posix_QextSerialPort *myCom;
-    unsigned char * minsheng_packet_valid(unsigned char * pbySrc); // 校验民生卡数据
-    unsigned char chk_xor8(unsigned char *pbySrc, u_int32_t dwDataLen);/* 数据逐字节按位异或*/
-
-    unsigned char Seaial_RecvData_Deal(unsigned char *pbuff, u_int plen);
-    unsigned char Minsheng_Card_Deal(unsigned char *pbuff, u_int plen);
-    unsigned char Identity_Card_Deal(unsigned char *pbuff, u_int plen);
-    unsigned char IC_Card_Deal(unsigned char *pbuff, u_int plen);
+    HARDWARE  * hardware;
 };
 
-// 同步头
-#define MINSHENG_SYNC_HEAD                         0x80
-#define MINSHENG_LAST_DATA_1	0x00
-#define MINSHENG_LAST_DATA_2	0x90
 
-/* identity card text data struct - 256bytes */
-typedef struct
-{
-    unsigned char name[30];			/* 姓名 Unicode编码*/
-    unsigned char gender_code[2];	/* 性别类型*/
-    unsigned char national_code[4];	/* 民族类型*/
-    unsigned char date_of_birth[16];	/* 出生日期YYYYMMDD*/
-    unsigned char address[70];		/* 住址*/
-    unsigned char identity_num[36];	/* 身份证号*/
-    unsigned char idIssued[30];		/* 签发机关*/
-    unsigned char start_date[16];	/* 有效期起始日期*/
-    unsigned char end_date[16];		/* 有效期截止日期*/
-    unsigned char res[36];			/* 预留*/
-}IDENTITY_Textinfo_PACKET;		/* 身份证文字信息结构体 */
-
-/* receive data struct -1295bytes*/
-typedef struct
-{
-    unsigned char sync_head[5];		/* 帧头 0xAA, 0xAA, 0xAA, 0x96, 0x69 */
-    unsigned short data_len;		/* 数据帧的有效长度 */
-    unsigned char sw1;				/* 居民身份证返回的状态参数1 */
-    unsigned char sw2;				/* 居民身份证返回的状态参数2 */
-    unsigned char sw3;				/* SAM_A的操作状态 */
-    unsigned char unknow[4];			/* 预留 */
-    IDENTITY_Textinfo_PACKET  text_info;	/* 身份证文字信息*/
-    unsigned char photo[1024];		/* 身份证相片*/
-    unsigned char chk_sum;			/* 数据帧中除帧头和校验和之外的数据逐字节按位异或的结果 */
-}IDENTITY_PACKET;	/* 读身份证信息结构体 */
-
-/* 民生卡读卡信息结构体*/
-typedef struct			/* Total: 95 bytes*/
-{
-    unsigned char  ccid_cmd;		/* CCID 指令*/
-    unsigned int   Abdata_len;		/* Abdata 长度*/
-    unsigned char  card_type;		/* 卡类型0: 13.56M卡1: IEC7816 PSAM卡*/
-    unsigned char  result_num;		/* 结果号*/
-    unsigned char  slot_status;		/* 卡槽状态*/
-    unsigned char  slot_err_info;	/* 卡槽错误信息*/
-    unsigned char  para_sum;			/* 参数的累加和*/
-    unsigned char  card_len;			/* 卡号长度*/
-    unsigned char  card[10];			/* 卡号*/
-    unsigned char  name[30];			/* 姓名*/
-    unsigned char  certificate_type[2];	/* 证件类型*/
-    unsigned char  validity_period[4];	/* 证件有效期*/
-    unsigned char  identity_num[32];		/* 身份证号*/
-    unsigned char  res[6];				/* 剩余字节*/
-//卡号长度(1字节)+ 卡号 + 姓名(30字节GBK) + 证件类型(2字节)
-//+证件有效期(4字节)//+ 证件号码(32字节GBK）+ 00 04 00 28 90 00
-}MINSHENG_Info_PACKET;
-
-typedef enum A83T_FUNCTION_CODE
-{
-    FUNCTION_CODE_A83T_RESET_POS = 0x00,	//A83T复位单片机
-    FUNCTION_CODE_A83T_LOGO = 0x20,			//A83T控制LOGO灯
-    FUNCTION_CODE_A83T_INFRARED = 0x21,		//A83T控制红外灯板
-    FUNCTION_CODE_A83T_LOCK = 0x22,			//A83T控制锁
-    FUNCTION_CODE_A83T_LIGHT_SENSOR = 0x23,	//STM32上传光敏状态
-    FUNCTION_CODE_A83T_MINSHENG_CARD = 0x24,//STM32上传民生卡信息
-    FUNCTION_CODE_A83T_IDENTITY_CARD = 0x25,//STM32上传身份证信息
-    FUNCTION_CODE_A83T_IC_CARD = 0x26,		//STM32上传IC 卡号
-}enum_A83T_FUNCTION_CODE;//与A83T 通信时的功能码定义
 
 #endif // MAINWINDOW_H
