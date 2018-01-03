@@ -37,17 +37,18 @@ public:
     Hardware_Info getStm32Info(void);		// A83T获取单片机参数
     bool getLinghtSensor_Status(void);		// A83T获取光敏状态
     u_int8_t getInfraredPWM(void);			// A83T获取当前红外灯板PWM值
+    u_int8_t setStm32Info(Hardware_Info *hard_info); // A83T设置单片机参数
 
 signals:
-    void sendLightSensor_Data(QString str); 	// 发送光敏状态信号
-    void sendMinShengCard_Data(QString str);	// 发送民生卡数据信号
-    void sendIdentityCard_Data(QString str);	// 发送身份证数据信号
-    void sendIC_Data(QString str);				// 发送IC 卡数据信号
+    void sig_LightSensor_Data(QString str); 	// 发送光敏状态信号
+    void sig_MinShengCard_Data(QString str);	// 发送民生卡数据信号
+    void sig_IdentityCard_Data(QString str);	// 发送身份证数据信号
+    void sig_IC_Data(QString str);				// 发送IC卡数据信号
 
-    void stm32IsAlive(bool alive);
-    void MinSheng_Reader_IsAlive(bool alive);
-    void Identity_Reader_IsAlive(bool alive);
-    void IC_Reader_IsAlive(bool alive);
+    void sig_stm32IsAlive(bool alive);				// 单片机是否在线信号
+    void sig_MinSheng_Reader_IsAlive(bool alive);	// 民生卡读头是否在线信号
+    void sig_Identity_Reader_IsAlive(bool alive);	// 身份证读头是否在线信号
+    void sig_IC_Reader_IsAlive(bool alive);			// IC卡读头是否在线信号
 
 private slots:
     void recvHardwareData(u_int8_t *data, u_int32_t len);
@@ -181,7 +182,7 @@ typedef enum A83T_FUNCTION_CODE
 {
     FUNCTION_CODE_A83T_RESET_POS = 0x00,			//A83T复位单片机
     FUNCTION_CODE_STM32_IS_ALIVE = 0x01,			//检测单片机是否在线
-    FUNCTION_CODE_MINSHENG_READER_ALIVE = 0x02,	//检测民生卡读头是否在线
+    FUNCTION_CODE_MINSHENG_READER_ALIVE = 0x02,		//检测民生卡读头是否在线
     FUNCTION_CODE_IDENTITY_READER_ALIVE = 0x03,		//检测身份证读头是否在线
     FUNCTION_CODE_IC_READER_ALIVE = 0x04,			//检测IC卡读头是否在线
     FUNCTION_CODE_STM32_UP_INFO = 0x05,				//STM32上传单片机参数

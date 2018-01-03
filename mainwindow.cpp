@@ -12,10 +12,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     hardware = new HARDWARE(this);
-    connect(hardware, SIGNAL(sendLightSensor_Data(QString)), this, SLOT(recvHardwareData(QString)));
-    connect(hardware, SIGNAL(sendMinShengCard_Data(QString)), this, SLOT(recvHardwareData(QString)));
-    connect(hardware, SIGNAL(sendIdentityCard_Data(QString)), this, SLOT(recvHardwareData(QString)));
-    connect(hardware, SIGNAL(sendIC_Data(QString)), this, SLOT(recvHardwareData(QString)));
+    connect(hardware, SIGNAL(sig_LightSensor_Data(QString)), this, SLOT(recvHardwareData(QString)));
+    connect(hardware, SIGNAL(sig_MinShengCard_Data(QString)), this, SLOT(recvHardwareData(QString)));
+    connect(hardware, SIGNAL(sig_IdentityCard_Data(QString)), this, SLOT(recvHardwareData(QString)));
+    connect(hardware, SIGNAL(sig_IC_Data(QString)), this, SLOT(recvHardwareData(QString)));
     connect(ui->lineEdit, SIGNAL(clicked()), this, SLOT(HandleLineEditclicked()));
 }
 

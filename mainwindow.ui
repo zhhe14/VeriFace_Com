@@ -74,7 +74,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Send PWM</string>
+     <string>设置PWM</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
