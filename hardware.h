@@ -24,10 +24,10 @@ class HARDWARE : public QObject
 public:
     explicit HARDWARE(QObject *parent = 0);
     ~HARDWARE();
-    void stm32IsAlive(void);			//检测单片机是否在线
-    void MinSheng_Reader_IsAlive(void);	//检测民生卡读头是否在线
-    void Identity_Reader_IsAlive(void);	//检测身份证读头是否在线
-    void IC_Reader_IsAlive(void);		//检测IC卡读头是否在线
+    bool stm32IsAlive(void);			//检测单片机是否在线
+    bool MinSheng_Reader_IsAlive(void);	//检测民生卡读头是否在线
+    bool Identity_Reader_IsAlive(void);	//检测身份证读头是否在线
+    bool IC_Reader_IsAlive(void);		//检测IC卡读头是否在线
 
     void resetStm32(void);	// 复位单片机
     void setLogoLed(short status /*LOGOLED_ON / LOGOLED_OFF*/); 		// 控制开关Logo 灯
@@ -51,7 +51,7 @@ signals:
     void sig_IC_Reader_IsAlive(bool alive);			// IC卡读头是否在线信号
 
 private slots:
-    void recvHardwareData(u_int8_t *data, u_int32_t len);
+    void recvAppHardwareData(u_int8_t *data, u_int32_t len);
     void readMyCom(void);
     void checkAlive(void);
 
@@ -60,8 +60,11 @@ private:
     QTimer *aliveTimer;
     QTimer *readTimer;
     int aliveCount;
-    u_int8_t STM32_ALIVE;
-    u_int8_t STM32_INFO_SYNC_FLAG;
+    bool STM32_ALIVE;
+    bool MinSheng_Reader_ALIVE;
+    bool Identity_Reader_ALIVE;
+    bool IC_Reader_ALIVE;
+    bool STM32_INFO_SYNC_FLAG;
     Hardware_Info hw_info;
     QString asciiToQString(u_int8_t *recv_data, u_int32_t recv_len);
     char ConvertHexChar(char ch);

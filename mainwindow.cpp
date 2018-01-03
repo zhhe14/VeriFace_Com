@@ -56,33 +56,39 @@ void MainWindow::on_SendPWM_Button_clicked()
     qDebug() << "on_SendPWM_Button_clicked pwm: " << pwm;
 
     this->hardware->setInfraredPWM(pwm);
-    //emit sendHardwareData(send_data, send_len);
+    //emit sendAppHardwareData(send_data, send_len);
 }
 
 void MainWindow::on_OpenDoor_Button_clicked()
 {
     this->hardware->setCtrlDoor(DOOR_OPEN);
     qDebug() << "on_OpenDoor_Button_clicked";
-    //emit sendHardwareData(send_data, send_len);
+    //emit sendAppHardwareData(send_data, send_len);
 }
 
 void MainWindow::on_CloseDoor_Button_clicked()
 {
     this->hardware->setCtrlDoor(DOOR_CLOSE);
     qDebug() << "on_CloseDoor_Button_clicked";
-    //emit sendHardwareData(send_data, send_len);
+    //emit sendAppHardwareData(send_data, send_len);
 }
 
 void MainWindow::on_OpenLogoLed_Button_clicked()
 {
     this->hardware->setLogoLed(LOGOLED_ON);
     qDebug() << "on_OpenLogoLed_Button_clicked";
-    //emit sendHardwareData(send_data, send_len);
+    //emit sendAppHardwareData(send_data, send_len);
 }
 
 void MainWindow::on_CloseLogoLed_Button_clicked()
 {
     this->hardware->setLogoLed(LOGOLED_OFF);
     qDebug() << "on_CloseLogoLed_Button_clicked";
-    //emit sendHardwareData(send_data, send_len);
+    //emit sendAppHardwareData(send_data, send_len);
+}
+
+void MainWindow::on_ResetSTM32_Button_clicked()
+{
+   this->hardware->resetStm32();
+    qDebug() << "on_ResetSTM32_Button_clicked";
 }

@@ -31,16 +31,19 @@ HARDWARE::HARDWARE(QObject *parent) :
     readTimer->start(100);
     connect(readTimer,SIGNAL(timeout()),this,SLOT(readMyCom()));
 
-    STM32_ALIVE = 0;
-    STM32_INFO_SYNC_FLAG = 0;
+    STM32_ALIVE = false;
+    MinSheng_Reader_ALIVE = false;
+    Identity_Reader_ALIVE = false;
+    IC_Reader_ALIVE = false;
+    STM32_INFO_SYNC_FLAG = false;
     stm32IsAlive();
 
-    connect(parent, SIGNAL(sendHardwareData(u_int8_t *, u_int32_t)), this, SLOT(recvHardwareData(u_int8_t *, u_int32_t)));
+    connect(parent, SIGNAL(sendAppHardwareData(u_int8_t *, u_int32_t)), this, SLOT(recvAppHardwareData(u_int8_t *, u_int32_t)));
 
     aliveCount = 0;
     aliveTimer = new QTimer(this);
     aliveTimer->start(10000);
-    connect(aliveTimer,SIGNAL(timeout()),this,SLOT(checkAlive()));
+    connect(aliveTimer,SIGNAL(timeout()), this, SLOT(checkAlive()));
 }
 
 HARDWARE::~HARDWARE()
@@ -48,68 +51,304 @@ HARDWARE::~HARDWARE()
 
 }
 
-void HARDWARE::stm32IsAlive()//检测单片机是否在线
+bool HARDWARE::stm32IsAlive()//检测单片机是否在线
 {
     unsigned char send_data[5] = {0x00, 0x05};
     unsigned int send_len = 5;
     unsigned short CrcValue = 0;
+#if 1
+    QByteArray recv_data;
+    u_int32_t recv_len = 0;
+    short status = 0xff;
+#endif
 
     send_data[2] = FUNCTION_CODE_STM32_IS_ALIVE;
     CrcValue = CRC16(send_data, send_len - 2);//计算CRC
     send_data[send_len -2] = (unsigned char )CrcValue;
     send_data[send_len -1] = CrcValue >> 8;
     hw_Com->write((char *)send_data, send_len);
+
+#if 1
+    this->readTimer->stop();
+    QThread::msleep(200);
+    recv_data = hw_Com->readAll(); //读取串口缓冲区的所有数据给临时变量recv_data
+    if (!recv_data.isEmpty())
+    {
+        recv_data=recv_data.toHex();
+        //qDebug() << "check stm32IsAlive recv: " << recv_data;
+        recv_len = recv_data.length() / 2;
+        unsigned char recv_data_ascii[recv_len];
+        //转成ASCII形式字符串
+        for (u_int i = 0; i < recv_len; i++)
+        {
+            recv_data_ascii[i] = ((this->ConvertHexChar(*(recv_data.data() + i * 2)) << 4)
+                                  | this->ConvertHexChar(*(recv_data.data() + i * 2 + 1)));
+        }
+
+        if (recv_len == (u_int32_t)((recv_data_ascii[0] << 8) + recv_data_ascii[1]))
+        {
+            if (CRC16((unsigned char *)recv_data_ascii, recv_len) == 0)//CRC校验
+            {
+                //qDebug() << "crc16 OK";
+                if (recv_data_ascii[2] == FUNCTION_CODE_STM32_IS_ALIVE)
+                {
+
+                    status = recv_data_ascii[3] << 8 | recv_data_ascii[4];
+                    if (status == 0x0001)
+                    {
+                        qDebug("FUNCTION_CODE_STM32_IS_ALIVE");
+                        emit sig_stm32IsAlive(true);
+                        STM32_ALIVE = true;
+                    }
+                    else
+                    {
+                        qDebug("FUNCTION_CODE_STM32_IS_NOALIVE");
+                        emit sig_stm32IsAlive(false);
+                        STM32_ALIVE = false;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        qDebug() << "check stm32IsAlive recv none" << recv_data;
+    }
+
+    this->readTimer->start(100);
+
+    return (status != 0xff) ? STM32_ALIVE : false;
+#endif
+
+    return true;
 }
 
-void HARDWARE::MinSheng_Reader_IsAlive()	//检测民生卡读头是否在线
+bool HARDWARE::MinSheng_Reader_IsAlive()	//检测民生卡读头是否在线
 {
     unsigned char send_data[5] = {0x00, 0x05};
     unsigned int send_len = 5;
     unsigned short CrcValue = 0;
+#if 1
+    QByteArray recv_data;
+    u_int32_t recv_len = 0;
+    short status = 0xff;
+#endif
 
     send_data[2] = FUNCTION_CODE_MINSHENG_READER_ALIVE;
     CrcValue = CRC16(send_data, send_len - 2);//计算CRC
     send_data[send_len -2] = (unsigned char )CrcValue;
     send_data[send_len -1] = CrcValue >> 8;
     hw_Com->write((char *)send_data, send_len);
+
+#if 1
+    this->readTimer->stop();
+    QThread::msleep(200);
+    recv_data = hw_Com->readAll(); //读取串口缓冲区的所有数据给临时变量recv_data
+    if (!recv_data.isEmpty())
+    {
+        recv_data=recv_data.toHex();
+        //qDebug() << "check MinSheng_Reader_IsAlive recv: " << recv_data;
+        recv_len = recv_data.length() / 2;
+        unsigned char recv_data_ascii[recv_len];
+        //转成ASCII形式字符串
+        for (u_int i = 0; i < recv_len; i++)
+        {
+            recv_data_ascii[i] = ((this->ConvertHexChar(*(recv_data.data() + i * 2)) << 4)
+                                  | this->ConvertHexChar(*(recv_data.data() + i * 2 + 1)));
+        }
+
+        if (recv_len == (u_int32_t)((recv_data_ascii[0] << 8) + recv_data_ascii[1]))
+        {
+            if (CRC16((unsigned char *)recv_data_ascii, recv_len) == 0)//CRC校验
+            {
+                //qDebug() << "crc16 OK";
+                if (recv_data_ascii[2] == FUNCTION_CODE_MINSHENG_READER_ALIVE)
+                {
+
+                    status = recv_data_ascii[3] << 8 | recv_data_ascii[4];
+                    if (status == 0x0001)
+                    {
+                        qDebug("FUNCTION_CODE_MINSHENG_READER_ALIVE");
+                        emit sig_MinSheng_Reader_IsAlive(true);
+                        MinSheng_Reader_ALIVE = true;
+                    }
+                    else
+                    {
+                        qDebug("FUNCTION_CODE_MINSHENG_READER_NOALIVE");
+                        emit sig_MinSheng_Reader_IsAlive(false);
+                        MinSheng_Reader_ALIVE = false;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        qDebug() << "check MinSheng_Reader_IsAlive recv none" << recv_data;
+    }
+
+    this->readTimer->start(100);
+
+    return (status != 0xff) ? MinSheng_Reader_ALIVE : false;
+#endif
+
+    return true;
 }
 
-void HARDWARE::Identity_Reader_IsAlive()	//检测身份证读头是否在线
+bool HARDWARE::Identity_Reader_IsAlive()	//检测身份证读头是否在线
 {
     unsigned char send_data[5] = {0x00, 0x05};
     unsigned int send_len = 5;
     unsigned short CrcValue = 0;
+#if 1
+    QByteArray recv_data;
+    u_int32_t recv_len = 0;
+    short status = 0xff;
+#endif
 
     send_data[2] = FUNCTION_CODE_IDENTITY_READER_ALIVE;
     CrcValue = CRC16(send_data, send_len - 2);//计算CRC
     send_data[send_len -2] = (unsigned char )CrcValue;
     send_data[send_len -1] = CrcValue >> 8;
     hw_Com->write((char *)send_data, send_len);
+
+#if 1
+    this->readTimer->stop();
+    QThread::msleep(200);
+    recv_data = hw_Com->readAll(); //读取串口缓冲区的所有数据给临时变量recv_data
+    if (!recv_data.isEmpty())
+    {
+        recv_data=recv_data.toHex();
+        //qDebug() << "check Identity_Reader_IsAlive recv: " << recv_data;
+        recv_len = recv_data.length() / 2;
+        unsigned char recv_data_ascii[recv_len];
+        //转成ASCII形式字符串
+        for (u_int i = 0; i < recv_len; i++)
+        {
+            recv_data_ascii[i] = ((this->ConvertHexChar(*(recv_data.data() + i * 2)) << 4)
+                                  | this->ConvertHexChar(*(recv_data.data() + i * 2 + 1)));
+        }
+
+        if (recv_len == (u_int32_t)((recv_data_ascii[0] << 8) + recv_data_ascii[1]))
+        {
+            if (CRC16((unsigned char *)recv_data_ascii, recv_len) == 0)//CRC校验
+            {
+                //qDebug() << "crc16 OK";
+                if (recv_data_ascii[2] == FUNCTION_CODE_IDENTITY_READER_ALIVE)
+                {
+
+                    status = recv_data_ascii[3] << 8 | recv_data_ascii[4];
+                    if (status == 0x0001)
+                    {
+                        qDebug("FUNCTION_CODE_IDENTITY_READER_ALIVE");
+                        emit sig_Identity_Reader_IsAlive(true);
+                        Identity_Reader_ALIVE = true;
+                    }
+                    else
+                    {
+                        qDebug("FUNCTION_CODE_IDENTITY_READER_NOALIVE");
+                        emit sig_Identity_Reader_IsAlive(false);
+                        Identity_Reader_ALIVE = false;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        qDebug() << "check Identity_Reader_IsAlive recv none" << recv_data;
+    }
+
+    this->readTimer->start(100);
+
+    return (status != 0xff) ? Identity_Reader_ALIVE : false;
+#endif
+
+    return true;
 }
 
-void HARDWARE::IC_Reader_IsAlive()		//检测IC卡读头是否在线
+bool HARDWARE::IC_Reader_IsAlive()		//检测IC卡读头是否在线
 {
     unsigned char send_data[5] = {0x00, 0x05};
     unsigned int send_len = 5;
     unsigned short CrcValue = 0;
+#if 1
+    QByteArray recv_data;
+    u_int32_t recv_len = 0;
+    short status = 0xff;
+#endif
 
     send_data[2] = FUNCTION_CODE_IC_READER_ALIVE;
     CrcValue = CRC16(send_data, send_len - 2);//计算CRC
     send_data[send_len -2] = (unsigned char )CrcValue;
     send_data[send_len -1] = CrcValue >> 8;
     hw_Com->write((char *)send_data, send_len);
+
+#if 1
+    this->readTimer->stop();
+    QThread::msleep(200);
+    recv_data = hw_Com->readAll(); //读取串口缓冲区的所有数据给临时变量recv_data
+    if (!recv_data.isEmpty())
+    {
+        recv_data=recv_data.toHex();
+        //qDebug() << "check IC_Reader_ALIVE recv: " << recv_data;
+        recv_len = recv_data.length() / 2;
+        unsigned char recv_data_ascii[recv_len];
+        //转成ASCII形式字符串
+        for (u_int i = 0; i < recv_len; i++)
+        {
+            recv_data_ascii[i] = ((this->ConvertHexChar(*(recv_data.data() + i * 2)) << 4)
+                                  | this->ConvertHexChar(*(recv_data.data() + i * 2 + 1)));
+        }
+
+        if (recv_len == (u_int32_t)((recv_data_ascii[0] << 8) + recv_data_ascii[1]))
+        {
+            if (CRC16((unsigned char *)recv_data_ascii, recv_len) == 0)//CRC校验
+            {
+                //qDebug() << "crc16 OK";
+                if (recv_data_ascii[2] == FUNCTION_CODE_IC_READER_ALIVE)
+                {
+
+                    status = recv_data_ascii[3] << 8 | recv_data_ascii[4];
+                    if (status == 0x0001)
+                    {
+                        qDebug("FUNCTION_CODE_IC_READER_ALIVE");
+                        emit sig_IC_Reader_IsAlive(true);
+                        IC_Reader_ALIVE = true;
+                    }
+                    else
+                    {
+                        qDebug("FUNCTION_CODE_IC_READER_NOALIVE");
+                        emit sig_IC_Reader_IsAlive(false);
+                        IC_Reader_ALIVE = false;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        qDebug() << "check IC_Reader_ALIVE recv none" << recv_data;
+    }
+
+    this->readTimer->start(100);
+
+    return (status != 0xff) ? IC_Reader_ALIVE : false;
+#endif
+
+    return true;
 }
 
 void HARDWARE::checkAlive()
 {
-    if (STM32_ALIVE == 0)
+    if (STM32_ALIVE == false)
     {
         this->stm32IsAlive();
         qDebug() << "Check STM32_ALIVE";
         return ;
     }
 
-    if (STM32_INFO_SYNC_FLAG == 0)
+    if (STM32_INFO_SYNC_FLAG == false)
     {
         this->hw_info = this->getStm32Info();
         if (this->hw_info.INIT_LIGHT_SENSOR_VALUE != 0xff)
@@ -120,10 +359,10 @@ void HARDWARE::checkAlive()
             qDebug() << "USE_IC_READER:" << this->hw_info.USE_IC_READER;
             qDebug() << "INIT_LIGHT_SENSOR_VALUE:" << this->hw_info.USE_IC_READER;
             qDebug() << "INIT_PWM_VALUE:" << this->hw_info.INIT_PWM_VALUE;
-            STM32_INFO_SYNC_FLAG = 1;
+            STM32_INFO_SYNC_FLAG = true;
 
             qDebug() << "LinghtSensor_Status: " << this->getLinghtSensor_Status();
-            qDebug() << "getInfraredPWM: " << this->getInfraredPWM();
+            qDebug() << "InfraredPWM val: " << this->getInfraredPWM();
         }
         return ;
     }
@@ -298,7 +537,7 @@ bool HARDWARE::getLinghtSensor_Status(void)	// A83T获取光敏状态
     if (!recv_data.isEmpty())
     {
         recv_data=recv_data.toHex();
-        qDebug() << "getLinghtSensor_Status recv: " << recv_data;
+        //qDebug() << "getLinghtSensor_Status recv: " << recv_data;
         recv_len = recv_data.length() / 2;
         unsigned char recv_data_ascii[recv_len];
         //转成ASCII形式字符串
@@ -336,7 +575,6 @@ u_int8_t HARDWARE::getInfraredPWM(void)			// A83T获取当前红外灯板PWM值
     QByteArray recv_data;
     u_int8_t temp_pwm = 0;
 
-    qDebug() << "getLinghtSensor_Status";
     send_data[2] = FUNCTION_CODE_A83T_GET_INFRARED_PWM;
     CrcValue = CRC16(send_data, send_len - 2);//计算CRC
     send_data[send_len -2] = (unsigned char )CrcValue;
@@ -349,7 +587,7 @@ u_int8_t HARDWARE::getInfraredPWM(void)			// A83T获取当前红外灯板PWM值
     if (!recv_data.isEmpty())
     {
         recv_data=recv_data.toHex();
-        qDebug() << "get InfraredPWM recv: " << recv_data;
+        //qDebug() << "get InfraredPWM recv: " << recv_data;
         recv_len = recv_data.length() / 2;
         unsigned char recv_data_ascii[recv_len];
         //转成ASCII形式字符串
@@ -367,7 +605,7 @@ u_int8_t HARDWARE::getInfraredPWM(void)			// A83T获取当前红外灯板PWM值
                 if (recv_data_ascii[2] == FUNCTION_CODE_A83T_GET_INFRARED_PWM)
                 {
                     memcpy(&temp_pwm, &recv_data_ascii[3], sizeof(temp_pwm));
-                    qDebug() << "get InfraredPWM OK";
+                    //qDebug() << "get InfraredPWM OK";
                 }
             }
         }
@@ -437,7 +675,7 @@ u_int8_t HARDWARE::setStm32Info(Hardware_Info *hard_info) // A83T设置单片机
     return ret;
 }
 
-void HARDWARE::recvHardwareData(u_int8_t *data, u_int32_t len)
+void HARDWARE::recvAppHardwareData(u_int8_t *data, u_int32_t len)
 {
     qDebug() << "HARDWARE send serial data";
     hw_Com->write((char *)data, len);
@@ -487,6 +725,7 @@ void HARDWARE::readMyCom()  //The function for read
 
     if (!recv_data.isEmpty())
     {
+        this->aliveTimer->stop();
         //qDebug("cnt: %d", cnt++);
         recv_data=recv_data.toHex();
         qDebug() << "recv: " << recv_data;
@@ -499,6 +738,7 @@ void HARDWARE::readMyCom()  //The function for read
                                   | this->ConvertHexChar(*(recv_data.data() + i * 2 + 1)));
             //qDebug("%02x ", recv_data_ascii[i]);
         }
+        this->aliveTimer->start();
         this->Seaial_RecvData_Deal(recv_data_ascii, recv_len);
     }
 }
@@ -511,7 +751,8 @@ u_int8_t HARDWARE::Seaial_RecvData_Deal(u_int8_t *pbuff, u_int plen) // 处理�
 
     cmd = pbuff[2];
 
-    if (plen == (u_int)((pbuff[0] << 8) + pbuff[1]))
+    qDebug() << "plen = " << plen << ", buff_len: " << (u_int)((pbuff[0] << 8) + pbuff[1]);
+    if (plen == ((pbuff[0] << 8) + pbuff[1]))
     {
         if (cmd != FUNCTION_CODE_A83T_IDENTITY_CARD)
         {
@@ -529,7 +770,7 @@ u_int8_t HARDWARE::Seaial_RecvData_Deal(u_int8_t *pbuff, u_int plen) // 处理�
                 status = pbuff[3] << 8 | pbuff[4];
                 if (status == 0x0001)
                 {
-                    STM32_ALIVE = 1;
+                    STM32_ALIVE = true;
                     qDebug("FUNCTION_CODE_STM32_IS_ALIVE");
                     emit sig_stm32IsAlive(true);
                 }
@@ -599,7 +840,7 @@ u_int8_t HARDWARE::Seaial_RecvData_Deal(u_int8_t *pbuff, u_int plen) // 处理�
                 qDebug() << "USE_IC_READER:" << this->hw_info.USE_IC_READER;
                 qDebug() << "INIT_LIGHT_SENSOR_VALUE:" << this->hw_info.USE_IC_READER;
                 qDebug() << "INIT_PWM_VALUE:" << this->hw_info.INIT_PWM_VALUE;
-                STM32_INFO_SYNC_FLAG = 1;
+                STM32_INFO_SYNC_FLAG = true;
             }
                 break;
 
@@ -625,7 +866,7 @@ u_int8_t HARDWARE::Seaial_RecvData_Deal(u_int8_t *pbuff, u_int plen) // 处理�
                 qDebug() << "USE_IC_READER:" << this->hw_info.USE_IC_READER;
                 qDebug() << "INIT_LIGHT_SENSOR_VALUE:" << this->hw_info.USE_IC_READER;
                 qDebug() << "INIT_PWM_VALUE:" << this->hw_info.INIT_PWM_VALUE;
-                STM32_INFO_SYNC_FLAG = 1;
+                STM32_INFO_SYNC_FLAG = true;
             }
                 break;
 
@@ -736,6 +977,8 @@ u_int8_t HARDWARE::Minsheng_Card_Deal(u_int8_t *pbuff, u_int plen) 	// 处理民
         //emit sendMinShengCard_Data(&MinSheng_Data[8], sizeof(MINSHENG_USER_INFO));
         emit sig_MinShengCard_Data(str);
     }
+    else
+        qDebug() << "MinSheng_Data valid Fail";
 
     return 0;
 }

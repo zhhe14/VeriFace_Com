@@ -20,7 +20,7 @@ public:
     ~MainWindow();
 
 signals:
-    void sendHardwareData(u_int8_t *data, u_int32_t len);
+    void sendAppHardwareData(u_int8_t *data, u_int32_t len);
 
 private slots:
     void HandleLineEditclicked();
@@ -33,6 +33,8 @@ private slots:
     void on_CloseDoor_Button_clicked();
     void on_OpenLogoLed_Button_clicked();
     void on_CloseLogoLed_Button_clicked();
+
+    void on_ResetSTM32_Button_clicked();
 
 private:
     Ui::MainWindow *ui;
