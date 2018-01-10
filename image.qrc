@@ -49,5 +49,16 @@
         <file>image/connect.png</file>
         <file>image/connect2.png</file>
         <file>image/connect3.png</file>
+        <file>image/IC.png</file>
+        <file>image/ID.png</file>
+        <file>image/MS.png</file>
+        <file>image/RED.png</file>
+        <file>image/IC_R.png</file>
+        <file>image/ID_R.png</file>
+        <file>image/MS_R.png</file>
+        <file>image/485.png</file>
+        <file>image/485_R.png</file>
+        <file>image/MCU.png</file>
+        <file>image/MCU_R.png</file>
     </qresource>
 </RCC>

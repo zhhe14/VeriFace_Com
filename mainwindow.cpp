@@ -12,10 +12,22 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     hardware = new HARDWARE(this);
-    connect(hardware, SIGNAL(sig_LightSensor_Data(QString)), this, SLOT(recvHardwareData(QString)));
-    connect(hardware, SIGNAL(sig_MinShengCard_Data(QString)), this, SLOT(recvHardwareData(QString)));
-    connect(hardware, SIGNAL(sig_IdentityCard_Data(QString)), this, SLOT(recvHardwareData(QString)));
-    connect(hardware, SIGNAL(sig_IC_Data(QString)), this, SLOT(recvHardwareData(QString)));
+    ui->Icon0_Label->hide();
+    ui->Icon1_Label->hide();
+    ui->Icon2_Label->hide();
+    ui->Icon3_Label->hide();
+
+    connect(hardware, SIGNAL(sig_LightSensor_Data(QString)), this, SLOT(slot_HardwareData(QString)));
+    connect(hardware, SIGNAL(sig_MinShengCard_Data(QString)), this, SLOT(slot_HardwareData(QString)));
+    connect(hardware, SIGNAL(sig_IdentityCard_Data(QString)), this, SLOT(slot_HardwareData(QString)));
+    connect(hardware, SIGNAL(sig_IC_Data(QString)), this, SLOT(slot_HardwareData(QString)));
+
+    connect(hardware, SIGNAL(sig_stm32IsAlive(bool)), this, SLOT(slot_stm32IsAlive(bool)));
+    connect(hardware, SIGNAL(sig_Use_Reader_Type(u_int8_t,u_int8_t,u_int8_t)), this, SLOT(slot_Use_Reader_Type(u_int8_t,u_int8_t,u_int8_t)));
+    connect(hardware, SIGNAL(sig_MinSheng_Reader_IsAlive(bool)), this, SLOT(slot_MinSheng_Reader_IsAlive(bool)));
+    connect(hardware, SIGNAL(sig_Identity_Reader_IsAlive(bool)), this, SLOT(slot_Identity_Reader_IsAlive(bool)));
+    connect(hardware, SIGNAL(sig_IC_Reader_IsAlive(bool)), this, SLOT(slot_IC_Reader_IsAlive(bool)));
+
     connect(ui->lineEdit, SIGNAL(clicked()), this, SLOT(HandleLineEditclicked()));
 }
 
@@ -43,11 +55,128 @@ void MainWindow::receiveData(QString data)
 }
 
 //void MainWindow::recvHardwareData(u_int8_t *recv_data, u_int32_t recv_len)
-void MainWindow::recvHardwareData(QString str)
+void MainWindow::slot_HardwareData(QString str)
 {
     qDebug() << "MainWindow recv Hardware data";
     ui->textBrowser->clear();
     ui->textBrowser->insertPlainText(str);
+}
+
+void MainWindow::slot_stm32IsAlive(bool alive) // 单片机是否在线信号
+{
+    if (alive)
+    {
+        ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/MCU.png"));
+        ui->Icon0_Label->show();
+    }
+    else
+    {
+        ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/MCU_R.png"));
+        ui->Icon0_Label->show();
+    }
+}
+
+void MainWindow::slot_Use_Reader_Type(u_int8_t ms, u_int8_t id, u_int8_t ic)
+{
+    u_int8_t cnt = 0;
+    QPixmap first_pix;
+    QPixmap second_pix;
+
+    if (hardware->hw_info.USE_MINSHENG_READER)
+    {
+        cnt++;
+
+        if (ms)
+        {
+            first_pix = QPixmap(":/icon/image/MS.png");
+        }
+        else
+        {
+            first_pix = QPixmap(":/icon/image/MS_R.png");
+        }
+    }
+
+    if (hardware->hw_info.USE_IDENTITY_READER)
+    {
+        cnt++;
+        if (id)
+        {
+            if (cnt == 1)
+                first_pix = QPixmap(":/icon/image/ID.png");
+            else if (cnt == 2)
+                second_pix = QPixmap(":/icon/image/ID.png");
+        }
+        else
+        {
+            if (cnt == 1)
+                first_pix = QPixmap(":/icon/image/ID_R.png");
+            else if (cnt == 2)
+                second_pix = QPixmap(":/icon/image/ID_R.png");
+        }
+    }
+
+    if (hardware->hw_info.USE_IC_READER)
+    {
+        cnt++;
+
+        if (ic)
+        {
+            if (cnt == 1)
+                first_pix = QPixmap(":/icon/image/IC.png");
+            else if (cnt == 2)
+                second_pix = QPixmap(":/icon/image/IC.png");
+        }
+        else
+        {
+            if (cnt == 1)
+                first_pix = QPixmap(":/icon/image/IC_R.png");
+            else if (cnt == 2)
+                second_pix = QPixmap(":/icon/image/IC_R.png");
+        }
+    }
+
+    if (cnt == 1)
+    {
+        ui->Icon1_Label->setPixmap(first_pix);
+        ui->Icon1_Label->show();
+    }
+    else if (cnt == 2)
+    {
+        ui->Icon1_Label->setPixmap(first_pix);
+        ui->Icon1_Label->show();
+        ui->Icon2_Label->setPixmap(second_pix);
+        ui->Icon2_Label->show();
+    }
+}
+
+void MainWindow::slot_MinSheng_Reader_IsAlive(bool alive)
+{
+    if (alive)
+    {
+    }
+    else
+    {
+    }
+}
+
+void MainWindow::slot_Identity_Reader_IsAlive(bool alive)
+{
+    if (alive)
+    {
+    }
+    else
+    {
+    }
+}
+
+void MainWindow::slot_IC_Reader_IsAlive(bool alive)
+{
+    if (alive)
+    {
+    }
+    else
+    {
+    }
 }
 
 void MainWindow::on_SendPWM_Button_clicked()

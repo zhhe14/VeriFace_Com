@@ -5,17 +5,25 @@
 #include "posix_qextserialport.h"
 #include <QTimer>
 
+#define Version_LEN       23   //pos机版本号字符串长度
+
 #pragma pack(1) // 指定1字节对齐
 typedef struct
 {
-    u_int32_t Open_Door_Continue_Time; 	//开门持续时间, 单位为毫秒ms
-    u_int8_t USE_MINSHENG_READER;		// 是否使用民生卡读头
-    u_int8_t USE_IDENTITY_READER;		// 是否使用身份证读头
-    u_int8_t USE_IC_READER;				// 是否使用IC卡读头
-    u_int8_t INIT_LIGHT_SENSOR_VALUE;	// 开机光敏初始值
-    u_int8_t INIT_PWM_VALUE;			// 开机PWM初始值
-
+    char 		Version[Version_LEN];	// 版本号
+    u_int32_t 	Open_Door_Continue_Time; 	//开门持续时间, 单位为毫秒ms
+    u_int8_t 	USE_MINSHENG_READER;		// 是否使用民生卡读头
+    u_int8_t 	USE_IDENTITY_READER;		// 是否使用身份证读头
+    u_int8_t 	USE_IC_READER;				// 是否使用IC卡读头
+    u_int8_t 	LIGHT_SENSOR_VALUE;			// 开机光敏初始值
+    u_int8_t 	PWM_VALUE;					// 开机PWM初始值
 } Hardware_Info;
+
+typedef struct
+{
+    u_int32_t 	Open_Door_Continue_Time; 	//开门持续时间, 单位为毫秒ms
+    u_int8_t 	INIT_PWM_VALUE;				// 开机PWM初始值
+} Hardware_Set_Info;
 #pragma pack() // 恢复默认对齐方式
 
 class HARDWARE : public QObject
@@ -24,22 +32,24 @@ class HARDWARE : public QObject
 public:
     explicit HARDWARE(QObject *parent = 0);
     ~HARDWARE();
-    bool stm32IsAlive(void);			//检测单片机是否在线
+    bool stm32IsAlive(void);			//检测单片机读头在线情况
     bool MinSheng_Reader_IsAlive(void);	//检测民生卡读头是否在线
     bool Identity_Reader_IsAlive(void);	//检测身份证读头是否在线
     bool IC_Reader_IsAlive(void);		//检测IC卡读头是否在线
 
+    void A83T_Ready(void);	// A83T Ready
     void resetStm32(void);	// 复位单片机
-    void setLogoLed(short status /*LOGOLED_ON / LOGOLED_OFF*/); 		// 控制开关Logo 灯
+    void setLogoLed(short status /*LOGOLED_ON | LOGOLED_OFF*/); 		// 控制开关Logo 灯
     void setInfraredPWM(u_int8_t pwm /*min: 0, max: 100, 0 to close*/);	// 控制红外灯板PWM
-    void setCtrlDoor(short status /*DOOR_OPEN / DOOR_CLOSE*/);			// 控制开关锁
+    void setCtrlDoor(short status /*DOOR_OPEN | DOOR_CLOSE*/);			// 控制开关锁
 
     Hardware_Info getStm32Info(void);		// A83T获取单片机参数
     bool getLinghtSensor_Status(void);		// A83T获取光敏状态
     u_int8_t getInfraredPWM(void);			// A83T获取当前红外灯板PWM值
-    u_int8_t setStm32Info(Hardware_Info *hard_info); // A83T设置单片机参数
+    u_int8_t setStm32Info(Hardware_Set_Info *hw_set_info); // A83T设置单片机参数
 
 signals:
+    void sig_Use_Reader_Type(u_int8_t ms, u_int8_t id, u_int8_t ic);// 使用读头的类型
     void sig_LightSensor_Data(QString str); 	// 发送光敏状态信号
     void sig_MinShengCard_Data(QString str);	// 发送民生卡数据信号
     void sig_IdentityCard_Data(QString str);	// 发送身份证数据信号
@@ -51,23 +61,26 @@ signals:
     void sig_IC_Reader_IsAlive(bool alive);			// IC卡读头是否在线信号
 
 private slots:
-    void recvAppHardwareData(u_int8_t *data, u_int32_t len);
+    void recvAppHardwareData(u_int8_t *data, u_int32_t len); // 接收APP数据
     void readMyCom(void);
     void checkAlive(void);
 
-private:
-    Posix_QextSerialPort *hw_Com;
-    QTimer *aliveTimer;
-    QTimer *readTimer;
-    int aliveCount;
+public:
     bool STM32_ALIVE;
     bool MinSheng_Reader_ALIVE;
     bool Identity_Reader_ALIVE;
     bool IC_Reader_ALIVE;
     bool STM32_INFO_SYNC_FLAG;
     Hardware_Info hw_info;
-    QString asciiToQString(u_int8_t *recv_data, u_int32_t recv_len);
-    char ConvertHexChar(char ch);
+    QString Stm32_Version;
+
+private:
+    Posix_QextSerialPort *hw_Com;
+    QTimer *aliveTimer;
+    QTimer *readTimer;
+    QString asciiToQString(u_int8_t *recv_data, u_int32_t recv_len); // 16进制转字符串
+    char ConvertHexChar(char ch); 								//转成ASCII形式字符串
+
     u_int8_t * minsheng_packet_valid(u_int8_t * pbySrc);		// 校验民生卡数据
     u_int8_t chk_xor8(u_int8_t *pbySrc, u_int32_t dwDataLen);	// 数据逐字节按位异或
     u_int8_t * identity_packet_valid(u_int8_t * pbySrc);		// 校验身份证数据
@@ -195,13 +208,15 @@ typedef enum A83T_FUNCTION_CODE
     FUNCTION_CODE_A83T_GET_LIGHT_SENSOR = 0x09,		// A83T获取光敏状态
     FUNCTION_CODE_A83T_GET_INFRARED_PWM = 0x0A,		// A83T获取当前红外灯板PWM值
     FUNCTION_CODE_A83T_GET_DOOR_STATUS = 0x0B,		// A83T获取当前锁状态
-    FUNCTION_CODE_A83T_LOGO = 0x20,			//A83T控制LOGO灯
-    FUNCTION_CODE_A83T_INFRARED = 0x21,		//A83T控制红外灯板
-    FUNCTION_CODE_A83T_LOCK = 0x22,			//A83T控制锁
-    FUNCTION_CODE_A83T_LIGHT_SENSOR = 0x23,	//STM32上传光敏状态
-    FUNCTION_CODE_A83T_MINSHENG_CARD = 0x24,//STM32上传民生卡信息
-    FUNCTION_CODE_A83T_IDENTITY_CARD = 0x25,//STM32上传身份证信息
-    FUNCTION_CODE_A83T_IC_CARD = 0x26,		//STM32上传IC卡号
+
+    FUNCTION_CODE_A83T_LOGO = 0x20,					//A83T控制LOGO灯
+    FUNCTION_CODE_A83T_INFRARED = 0x21,				//A83T控制红外灯板
+    FUNCTION_CODE_A83T_LOCK = 0x22,					//A83T控制锁
+    FUNCTION_CODE_A83T_LIGHT_SENSOR = 0x23,			//STM32上传光敏状态
+    FUNCTION_CODE_A83T_MINSHENG_CARD = 0x24,		//STM32上传民生卡信息
+    FUNCTION_CODE_A83T_IDENTITY_CARD = 0x25,		//STM32上传身份证信息
+    FUNCTION_CODE_A83T_IC_CARD = 0x26,				//STM32上传IC卡号
+    FUNCTION_CODE_A83T_READY = 0x27,				//A83T Ready
 }enum_A83T_FUNCTION_CODE;//与A83T 通信时的功能码定义
 
 #endif // HARDWARE_H

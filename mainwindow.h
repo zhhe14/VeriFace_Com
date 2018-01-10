@@ -26,7 +26,12 @@ private slots:
     void HandleLineEditclicked();
     void receiveData(QString data);
     //void recvHardwareData(u_int8_t *recv_data, u_int32_t recv_len);
-    void recvHardwareData(QString str);
+    void slot_HardwareData(QString str);
+    void slot_stm32IsAlive(bool alive);				// 单片机是否在线信号
+    void slot_Use_Reader_Type(u_int8_t ms, u_int8_t id, u_int8_t ic);// 使用读头的类型
+    void slot_MinSheng_Reader_IsAlive(bool alive);	// 民生卡读头是否在线信号
+    void slot_Identity_Reader_IsAlive(bool alive);	// 身份证读头是否在线信号
+    void slot_IC_Reader_IsAlive(bool alive);			// IC卡读头是否在线信号
 
     void on_SendPWM_Button_clicked();
     void on_OpenDoor_Button_clicked();
