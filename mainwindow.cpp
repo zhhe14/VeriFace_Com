@@ -17,13 +17,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->Icon2_Label->hide();
     ui->Icon3_Label->hide();
 
-    connect(hardware, SIGNAL(sig_LightSensor_Data(QString)), this, SLOT(slot_HardwareData(QString)));
-    connect(hardware, SIGNAL(sig_MinShengCard_Data(QString)), this, SLOT(slot_HardwareData(QString)));
-    connect(hardware, SIGNAL(sig_IdentityCard_Data(QString)), this, SLOT(slot_HardwareData(QString)));
-    connect(hardware, SIGNAL(sig_IC_Data(QString)), this, SLOT(slot_HardwareData(QString)));
+    connect(hardware, SIGNAL(sig_LightSensor_Data(bool)), this, SLOT(slot_LightSensor_Data(bool)));
+    connect(hardware, SIGNAL(sig_MinShengCard_Data(QString)), this, SLOT(slot_MinShengCard_Data(QString)));
+    connect(hardware, SIGNAL(sig_IdentityCard_Data(QString)), this, SLOT(slot_IdentityCard_Data(QString)));
+    connect(hardware, SIGNAL(sig_IC_Data(QString)), this, SLOT(slot_IC_Data(QString)));
 
     connect(hardware, SIGNAL(sig_stm32IsAlive(bool)), this, SLOT(slot_stm32IsAlive(bool)));
-    connect(hardware, SIGNAL(sig_Use_Reader_Type(u_int8_t,u_int8_t,u_int8_t)), this, SLOT(slot_Use_Reader_Type(u_int8_t,u_int8_t,u_int8_t)));
+    connect(hardware, SIGNAL(sig_Use_Reader_Type(bool,bool,bool,bool)), this, SLOT(slot_Use_Reader_Type(bool,bool,bool,bool)));
     connect(hardware, SIGNAL(sig_MinSheng_Reader_IsAlive(bool)), this, SLOT(slot_MinSheng_Reader_IsAlive(bool)));
     connect(hardware, SIGNAL(sig_Identity_Reader_IsAlive(bool)), this, SLOT(slot_Identity_Reader_IsAlive(bool)));
     connect(hardware, SIGNAL(sig_IC_Reader_IsAlive(bool)), this, SLOT(slot_IC_Reader_IsAlive(bool)));
@@ -54,10 +54,31 @@ void MainWindow::receiveData(QString data)
     ui->lineEdit->setText(data);
 }
 
-//void MainWindow::recvHardwareData(u_int8_t *recv_data, u_int32_t recv_len)
-void MainWindow::slot_HardwareData(QString str)
+void MainWindow::slot_LightSensor_Data(bool status)
 {
-    qDebug() << "MainWindow recv Hardware data";
+    qDebug() << "MainWindow recv LightSensor_Data";
+    ui->textBrowser->clear();
+    QString str = status ? "height"  : "low";
+    ui->textBrowser->insertPlainText(str);
+}
+
+void MainWindow::slot_MinShengCard_Data(QString str)
+{
+    qDebug() << "MainWindow recv MinShengCard_Data";
+    ui->textBrowser->clear();
+    ui->textBrowser->insertPlainText(str);
+}
+
+void MainWindow::slot_IdentityCard_Data(QString str)
+{
+    qDebug() << "MainWindow recv IdentityCard_Data";
+    ui->textBrowser->clear();
+    ui->textBrowser->insertPlainText(str);
+}
+
+void MainWindow::slot_IC_Data(QString str)
+{
+    qDebug() << "MainWindow recv IC_Data";
     ui->textBrowser->clear();
     ui->textBrowser->insertPlainText(str);
 }
@@ -66,21 +87,35 @@ void MainWindow::slot_stm32IsAlive(bool alive) // 单片机是否在线信号
 {
     if (alive)
     {
-        ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/MCU.png"));
-        ui->Icon0_Label->show();
+        //ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/MCU.png"));
+        //ui->Icon0_Label->show();
     }
     else
     {
-        ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/MCU_R.png"));
-        ui->Icon0_Label->show();
+        //ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/MCU_R.png"));
+        //ui->Icon0_Label->show();
     }
 }
 
-void MainWindow::slot_Use_Reader_Type(u_int8_t ms, u_int8_t id, u_int8_t ic)
+void MainWindow::slot_Use_Reader_Type(bool ms, bool id, bool ic, bool rs485)
 {
     u_int8_t cnt = 0;
     QPixmap first_pix;
     QPixmap second_pix;
+
+    if (hardware->hw_info.USE_485)
+    {
+        if (rs485)
+        {
+            ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/485.png"));
+            ui->Icon0_Label->show();
+        }
+        else
+        {
+            ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/485_R.png"));
+            ui->Icon0_Label->show();
+        }
+    }
 
     if (hardware->hw_info.USE_MINSHENG_READER)
     {
@@ -176,6 +211,20 @@ void MainWindow::slot_IC_Reader_IsAlive(bool alive)
     }
     else
     {
+    }
+}
+
+void MainWindow::slot_Use_485(bool alive) 					// 485是否在线信号
+{
+    if (alive)
+    {
+        ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/485.png"));
+        ui->Icon0_Label->show();
+    }
+    else
+    {
+        ui->Icon0_Label->setPixmap(QPixmap(":/icon/image/485_R.png"));
+        ui->Icon0_Label->show();
     }
 }
 

@@ -4,27 +4,7 @@
 #include <QObject>
 #include "posix_qextserialport.h"
 #include <QTimer>
-
-#define Version_LEN       23   //pos机版本号字符串长度
-
-#pragma pack(1) // 指定1字节对齐
-typedef struct
-{
-    char 		Version[Version_LEN];	// 版本号
-    u_int32_t 	Open_Door_Continue_Time; 	//开门持续时间, 单位为毫秒ms
-    u_int8_t 	USE_MINSHENG_READER;		// 是否使用民生卡读头
-    u_int8_t 	USE_IDENTITY_READER;		// 是否使用身份证读头
-    u_int8_t 	USE_IC_READER;				// 是否使用IC卡读头
-    u_int8_t 	LIGHT_SENSOR_VALUE;			// 开机光敏初始值
-    u_int8_t 	PWM_VALUE;					// 开机PWM初始值
-} Hardware_Info;
-
-typedef struct
-{
-    u_int32_t 	Open_Door_Continue_Time; 	//开门持续时间, 单位为毫秒ms
-    u_int8_t 	INIT_PWM_VALUE;				// 开机PWM初始值
-} Hardware_Set_Info;
-#pragma pack() // 恢复默认对齐方式
+#include "hardware_common.h"
 
 class HARDWARE : public QObject
 {
@@ -49,8 +29,8 @@ public:
     u_int8_t setStm32Info(Hardware_Set_Info *hw_set_info); // A83T设置单片机参数
 
 signals:
-    void sig_Use_Reader_Type(u_int8_t ms, u_int8_t id, u_int8_t ic);// 使用读头的类型
-    void sig_LightSensor_Data(QString str); 	// 发送光敏状态信号
+    void sig_Use_Reader_Type(bool ms, bool id, bool ic, bool rs485);// 使用读头的类型
+    void sig_LightSensor_Data(bool status); 	// 发送光敏状态信号
     void sig_MinShengCard_Data(QString str);	// 发送民生卡数据信号
     void sig_IdentityCard_Data(QString str);	// 发送身份证数据信号
     void sig_IC_Data(QString str);				// 发送IC卡数据信号
@@ -61,7 +41,7 @@ signals:
     void sig_IC_Reader_IsAlive(bool alive);			// IC卡读头是否在线信号
 
 private slots:
-    void recvAppHardwareData(u_int8_t *data, u_int32_t len); // 接收APP数据
+    //void recvAppHardwareData(u_int8_t *data, u_int32_t len); // 接收APP数据
     void readMyCom(void);
     void checkAlive(void);
 
@@ -70,6 +50,7 @@ public:
     bool MinSheng_Reader_ALIVE;
     bool Identity_Reader_ALIVE;
     bool IC_Reader_ALIVE;
+    bool RS485_ALIVE;
     bool STM32_INFO_SYNC_FLAG;
     Hardware_Info hw_info;
     QString Stm32_Version;
@@ -86,7 +67,6 @@ private:
     u_int8_t * identity_packet_valid(u_int8_t * pbySrc);		// 校验身份证数据
 
     u_int8_t Seaial_RecvData_Deal(u_int8_t *pbuff, u_int plen);	// 处理串口接收到的数据
-    u_int8_t Light_Sensor_Deal(u_int8_t *pbuff, u_int plen);	// 处理光敏数据
     u_int8_t Minsheng_Card_Deal(u_int8_t *pbuff, u_int plen);	// 处理民生卡数据
     u_int8_t Identity_Card_Deal(u_int8_t *pbuff, u_int plen);	// 处理身份证数据
     u_int8_t IC_Card_Deal(u_int8_t *pbuff, u_int plen);			// 处理IC 卡数据
@@ -100,10 +80,7 @@ private:
 #define NTOH2(x)  HTON2(x)
 #define NTOH4(x)  HTON4(x)
 
-#define LOGOLED_ON 		0x0001
-#define LOGOLED_OFF 	0x0000
-#define DOOR_OPEN		0x0001
-#define DOOR_CLOSE		0x0000
+#define SERIAL_PORT_DEBUG_MODE      1      // 使用串口输出调试信息
 
 #define IDENTITY_SYNC_HEAD_LEN		5
 #define IDENTITY_CMD_LEN			10
@@ -146,21 +123,6 @@ typedef struct
     unsigned char chk_sum;			/* 数据帧中除帧头和校验和之外的数据逐字节按位异或的结果 */
 }IDENTITY_PACKET;	/* 读身份证信息结构体 */
 
-/* identity card user information - 1244bytes */
-typedef struct
-{
-    unsigned char name[30];			/* 姓名 Unicode编码*/
-    unsigned char gender_code[2];	/* 性别类型*/
-    unsigned char national_code[4];	/* 民族类型*/
-    unsigned char date_of_birth[16];/* 出生日期YYYYMMDD*/
-    unsigned char address[70];		/* 住址*/
-    unsigned char identity_num[36];	/* 身份证号*/
-    unsigned char idIssued[30];		/* 签发机关*/
-    unsigned char start_date[16];	/* 有效期起始日期*/
-    unsigned char end_date[16];		/* 有效期截止日期*/
-    unsigned char photo[1024];		/* 身份证相片*/
-} IDENTITY_USER_INFO;
-
 /* 民生卡读卡信息结构体*/
 typedef struct			/* Total: 95 bytes*/
 {
@@ -182,18 +144,9 @@ typedef struct			/* Total: 95 bytes*/
 //+证件有效期(4字节)//+ 证件号码(32字节GBK）+ 00 04 00 28 90 00
 }MINSHENG_Info_PACKET;
 
-/* minsheng card user information - 78 bytes */
-typedef struct			/* Total: 78 bytes*/
-{
-    unsigned char  card[10];			/* 卡号*/
-    unsigned char  name[30];			/* 姓名*/
-    unsigned char  certificate_type[2];	/* 证件类型*/
-    unsigned char  validity_period[4];	/* 证件有效期*/
-    unsigned char  identity_num[32];	/* 身份证号*/
-//卡号 + 姓名(30字节GBK) + 证件类型(2字节) +证件有效期(4字节) + 证件号码(32字节GBK)
-}MINSHENG_USER_INFO;
 #pragma pack() // 恢复默认对齐方式
 
+// 命令
 typedef enum A83T_FUNCTION_CODE
 {
     FUNCTION_CODE_A83T_RESET_POS = 0x00,			//A83T复位单片机
@@ -220,3 +173,4 @@ typedef enum A83T_FUNCTION_CODE
 }enum_A83T_FUNCTION_CODE;//与A83T 通信时的功能码定义
 
 #endif // HARDWARE_H
+

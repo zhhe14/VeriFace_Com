@@ -25,13 +25,17 @@ signals:
 private slots:
     void HandleLineEditclicked();
     void receiveData(QString data);
-    //void recvHardwareData(u_int8_t *recv_data, u_int32_t recv_len);
-    void slot_HardwareData(QString str);
+    void slot_LightSensor_Data(bool status);		// 光敏状态改变
+    void slot_MinShengCard_Data(QString str);		// 处理民生卡用户数据
+    void slot_IdentityCard_Data(QString str);		// 处理身份证用户数据
+    void slot_IC_Data(QString str);					// 处理IC卡用户数据
+
     void slot_stm32IsAlive(bool alive);				// 单片机是否在线信号
-    void slot_Use_Reader_Type(u_int8_t ms, u_int8_t id, u_int8_t ic);// 使用读头的类型
+    void slot_Use_Reader_Type(bool ms, bool id, bool ic, bool rs485);// 使用读头的类型
     void slot_MinSheng_Reader_IsAlive(bool alive);	// 民生卡读头是否在线信号
     void slot_Identity_Reader_IsAlive(bool alive);	// 身份证读头是否在线信号
-    void slot_IC_Reader_IsAlive(bool alive);			// IC卡读头是否在线信号
+    void slot_IC_Reader_IsAlive(bool alive);		// IC卡读头是否在线信号
+    void slot_Use_485(bool alive);					// 485是否在线信号
 
     void on_SendPWM_Button_clicked();
     void on_OpenDoor_Button_clicked();
@@ -45,7 +49,5 @@ private:
     Ui::MainWindow *ui;
     HARDWARE  * hardware;
 };
-
-
 
 #endif // MAINWINDOW_H

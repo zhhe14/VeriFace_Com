@@ -33,7 +33,8 @@ HEADERS  += mainwindow.h \
     crc16.h \
     inputnum_widget.h \
     mylineedit.h \
-    hardware.h
+    hardware.h \
+    hardware_common.h
 
 FORMS    += mainwindow.ui \
     inputnum_widget.ui
